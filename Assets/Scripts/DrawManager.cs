@@ -79,7 +79,7 @@ public class DrawManager : MonoBehaviour
     private void OnHeadsClashDraw()
     {
         if (!_gameRunning) return;
-        Debug.Log("🤜🤛 Ничья: головы столкнулись.");
+        Debug.Log("Ничья: головы столкнулись.");
         StopGame();
     }
 

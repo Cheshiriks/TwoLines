@@ -135,7 +135,7 @@ public class DrawManagerV2 : MonoBehaviour
         // Первый сегмент
         StartNewSegment(p, spawn);
 
-        // 👇 Один детектор на голову, следит за ВСЕМИ своими сегментами
+        // Один детектор на голову, следит за ВСЕМИ своими сегментами
         p.ownDetector = headObj.AddComponent<OwnLineCollisionDetector>();
         p.ownDetector.Init(
             () => _gameRunning,
@@ -173,7 +173,7 @@ public class DrawManagerV2 : MonoBehaviour
         p.segments.Add(seg);
         p.collisionArmed = false;
 
-        // 👇 подписываем новый сегмент в детектор своих линий
+        // Подписываем новый сегмент в детектор своих линий
         p.ownDetector?.AddTarget(seg.Collider);
     }
 
