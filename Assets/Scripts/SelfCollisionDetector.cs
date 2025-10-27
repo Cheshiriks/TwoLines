@@ -3,9 +3,9 @@ using UnityEngine;
 public class SelfCollisionDetector : MonoBehaviour
 {
     private System.Action _onHit;
-    private EdgeCollider2D _target;
+    private Collider2D _target; //  было EdgeCollider2D
 
-    public void Init(EdgeCollider2D target, System.Action onHit)
+    public void Init(Collider2D target, System.Action onHit)
     {
         _target = target;
         _onHit = onHit;

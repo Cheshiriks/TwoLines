@@ -435,6 +435,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2090317131}
   - component: {fileID: 2090317134}
+  - component: {fileID: 2090317135}
   m_Layer: 0
   m_Name: DrawManager
   m_TagString: Untagged
@@ -464,13 +465,12 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2090317129}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 79637a7eb5b8848c78f003abdb08c946, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   _linePrefab: {fileID: 6499686957224384469, guid: 387a075e444854ce1bee162f0026af89, type: 3}
-  _lineMaterial2: {fileID: 0}
   _speed: 2
   _startAngleDeg: 90
   _turnRateDegPerSec: 180
@@ -480,6 +480,29 @@ MonoBehaviour:
   _minPointsBeforeCollision: 5
   _spawnP1: {x: -2, y: 0}
   _spawnP2: {x: 2, y: 0}
+--- !u!114 &2090317135
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2090317129}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a34f79533862c4a7aa3da52a97df7cac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _linePrefab: {fileID: 6499686957224384469, guid: 387a075e444854ce1bee162f0026af89, type: 3}
+  _speed: 2
+  _startAngleDeg: 90
+  _turnRateDegPerSec: 180
+  _stepTurnDeg: 5
+  _excludeHeadPoints: 2
+  _minPointsBeforeCollision: 5
+  _spawnP1: {x: -2, y: 0}
+  _spawnP2: {x: 2, y: 0}
+  _gapIntervalRange: {x: 3, y: 6}
+  _gapDurationRange: {x: 0.2, y: 0.35}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

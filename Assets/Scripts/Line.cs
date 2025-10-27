@@ -1,6 +1,10 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+[RequireComponent(typeof(LineRenderer))]
+[RequireComponent(typeof(EdgeCollider2D))]
+[RequireComponent(typeof(Rigidbody2D))]
 public class Line : MonoBehaviour
 {
     [SerializeField] private LineRenderer _renderer;
@@ -9,6 +13,9 @@ public class Line : MonoBehaviour
     [SerializeField] private int _excludeHeadPoints = 3;
 
     private readonly List<Vector2> _points = new List<Vector2>();
+    
+    private Coroutine _fadeRoutine;
+    private Color32 _baseColor;
 
     public EdgeCollider2D Collider => _collider;
     public int PointCount => _renderer.positionCount;
@@ -70,8 +77,32 @@ public class Line : MonoBehaviour
         UpdateEdgeColliderPoints();
     }
 
-    public void SetColor(Color color)
+    public void SetColor(Color32 color)
     {
+        _baseColor = color;
         _renderer.material.color = color;
+    }
+    
+    // === Затухание (остается слегка видимой) ===
+    public void FadeOut(float duration = 0.1f, byte targetAlpha = 20)
+    {
+        if (_fadeRoutine != null) StopCoroutine(_fadeRoutine);
+        _fadeRoutine = StartCoroutine(FadeRoutine(duration, targetAlpha));
+    }
+
+    private IEnumerator FadeRoutine(float duration, byte targetAlpha)
+    {
+        float t = 0f;
+        byte startA = _baseColor.a;
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            float k = Mathf.Clamp01(t / duration);
+            byte newA = (byte)Mathf.Lerp(startA, targetAlpha, k);
+            var newColor = new Color32(_baseColor.r, _baseColor.g, _baseColor.b, newA);
+            _renderer.material.color = newColor;
+            yield return null;
+        }
+        
     }
 }

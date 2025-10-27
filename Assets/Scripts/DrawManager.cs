@@ -4,7 +4,6 @@ public class DrawManager : MonoBehaviour
 {
     [Header("Refs")]
     [SerializeField] private Line _linePrefab;
-    [SerializeField] private Material _lineMaterial2;
 
     [Header("Movement (общие)")]
     [SerializeField] private float _speed = 2f;
@@ -57,9 +56,8 @@ public class DrawManager : MonoBehaviour
         _minX = bl.x; _maxX = tr.x; _minY = bl.y; _maxY = tr.y;
 
         // Создаём игроков
-        _p1 = CreatePlayer("P1", _spawnP1, Color.cyan, KeyCode.A, KeyCode.D);
-        _p2 = CreatePlayer("P2", _spawnP2, new Color(1f, 0.5f, 0f), KeyCode.LeftArrow, KeyCode.RightArrow);
-        //_p1.line
+        _p1 = CreatePlayer("P1", _spawnP1, new Color32( 31 , 255 , 0 , 255 ), KeyCode.A, KeyCode.D);
+        _p2 = CreatePlayer("P2", _spawnP2, new Color32( 255 , 0 , 174 , 255 ), KeyCode.LeftArrow, KeyCode.RightArrow);
 
         // Дуэль: детектируем врезание головы в ЧУЖОЙ EdgeCollider2D
         // P1 головой в линию P2 → P1 проиграл
@@ -69,6 +67,20 @@ public class DrawManager : MonoBehaviour
         // P2 головой в линию P1 → P2 проиграл
         var duelDet2 = _p2.head.gameObject.AddComponent<SelfCollisionDetector>();
         duelDet2.Init(_p1.line.Collider, () => OnPlayerHitOther(_p2, _p1));
+
+        // Новое: голова ↔ голова = ничья
+        var headVsHead1 = _p1.head.gameObject.AddComponent<SelfCollisionDetector>();
+        headVsHead1.Init(_p2.headCol, OnHeadsClashDraw);
+
+        var headVsHead2 = _p2.head.gameObject.AddComponent<SelfCollisionDetector>();
+        headVsHead2.Init(_p1.headCol, OnHeadsClashDraw);
+    }
+    
+    private void OnHeadsClashDraw()
+    {
+        if (!_gameRunning) return;
+        Debug.Log("Ничья: головы столкнулись.");
+        StopGame();
     }
 
     private Player CreatePlayer(string name, Vector2 spawn, Color color, KeyCode left, KeyCode right)
@@ -153,7 +165,7 @@ public class DrawManager : MonoBehaviour
             p.headingRad += p.turnDir * _turnRateDegPerSec * Mathf.Deg2Rad * dt;
 
         Vector2 dir = new Vector2(Mathf.Cos(p.headingRad), Mathf.Sin(p.headingRad));
-        Vector2 newPos = (Vector2)p.head.position + dir * _speed * dt;
+        Vector2 newPos = (Vector2) p.head.position + _speed * dt * dir;
 
         p.head.position = newPos;
         p.line.SetPosition(newPos);
@@ -179,7 +191,7 @@ public class DrawManager : MonoBehaviour
         if (pos.x - r <= _minX || pos.x + r >= _maxX || pos.y - r <= _minY || pos.y + r >= _maxY)
         {
             Debug.Log($"{p.name} достиг края экрана! {p.name} проиграл.");
-            StopGame();
+            StopGame(p);
         }
     }
 
@@ -188,7 +200,7 @@ public class DrawManager : MonoBehaviour
     {
         if (!_gameRunning) return;
         Debug.Log($"{p.name} соприкоснулся сам с собой! {p.name} проиграл.");
-        StopGame();
+        StopGame(p);
     }
 
     // Проигрыш при ударе в ЧУЖУЮ линию
@@ -197,10 +209,10 @@ public class DrawManager : MonoBehaviour
         if (!_gameRunning) return;
         // hitter — тот, чья голова врезалась; он проиграл
         Debug.Log($"{hitter.name} врезался в линию {victimOwner.name}! {hitter.name} проиграл.");
-        StopGame();
+        StopGame(hitter);
     }
 
-    private void StopGame()
+    private void StopGame(Player loser = null)
     {
         if (!_gameRunning) return;
         _gameRunning = false;
@@ -209,5 +221,11 @@ public class DrawManager : MonoBehaviour
         _p2.isDrawing = false;
 
         Debug.Log("Игра остановлена.");
+        
+        // если кто-то проиграл — погасить его линии
+        if (loser != null)
+        {
+            loser.line.FadeOut(0.5f); // время затухания
+        }
     }
 }
