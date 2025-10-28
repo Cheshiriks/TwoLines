@@ -84,7 +84,7 @@ public class Line : MonoBehaviour
     }
     
     // === Затухание (остается слегка видимой) ===
-    public void FadeOut(float duration = 0.1f, byte targetAlpha = 20)
+    public void FadeOut(float duration = 0.5f, byte targetAlpha = 20)
     {
         if (_fadeRoutine != null) StopCoroutine(_fadeRoutine);
         _fadeRoutine = StartCoroutine(FadeRoutine(duration, targetAlpha));
