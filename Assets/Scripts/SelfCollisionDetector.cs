@@ -10,8 +10,11 @@ public class SelfCollisionDetector : MonoBehaviour
         _target = target;
         _onHit = onHit;
     }
+    
+    private void OnTriggerEnter2D(Collider2D other) { Check(other); }
+    private void OnTriggerStay2D (Collider2D other) { Check(other); }
 
-    private void OnTriggerEnter2D(Collider2D other)
+    private void Check(Collider2D other)
     {
         if (_target != null && other == _target)
             _onHit?.Invoke();
