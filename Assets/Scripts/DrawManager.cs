@@ -6,33 +6,44 @@ public class DrawManager : MonoBehaviour
 {
     // ==== Prefabs / Systems ====
     [Header("Prefabs & Systems")]
-    [SerializeField] private Line _linePrefab;                 // твой Line (LineRenderer + EdgeCollider2D + Line.cs)
-    [SerializeField] private Sprite _headSprite;               // спрайт для головы
-    [SerializeField] private int _headSortingOrder = 10;       // рендерить поверх линии
-    [SerializeField] private ParticleSystem _deathParticlesPrefab; // партиклы при поражении
-    [SerializeField] private BonusSystem _bonusSystem;         // внешний компонент системы бонусов
+    [SerializeField] private Line _linePrefab;                    // Line (LineRenderer+EdgeCollider2D+Line.cs)
+    [SerializeField] private Sprite _headSprite;                  // визуал головы
+    [SerializeField] private int _headSortingOrder = 10;          // рендер головы поверх линии
+    [SerializeField] private ParticleSystem _deathParticlesPrefab;// партиклы при поражении
+    [SerializeField] private BonusSystem _bonusSystem;            // внешняя система бонусов
 
     // ==== Movement ====
     [Header("Movement")]
     [SerializeField] private float _speed = 2f;
-    [SerializeField] private float _startAngleDeg = 90f;       // 90° = вверх
-    [SerializeField] private float _turnRateDegPerSec = 90f;   // угловая скорость при удержании
-    [SerializeField] private float _stepTurnDeg = 15f;         // поворот по нажатию
+    [SerializeField] private float _startAngleDeg = 90f;
+    [SerializeField] private float _turnRateDegPerSec = 90f;
+    [SerializeField] private float _stepTurnDeg = 15f;
 
     // ==== Self-Collision ====
     [Header("Self-Collision")]
-    [SerializeField] private int _excludeHeadPoints = 3;       // сколько последних точек не отдавать в EdgeCollider2D
-    [SerializeField] private int _minPointsBeforeCollision = 4;// когда «взводить» самоколлизию
+    [SerializeField] private int _excludeHeadPoints = 3;          // не отдавать в EdgeCollider2D последние N точек
+    [SerializeField] private int _minPointsBeforeCollision = 4;   // «взвод» самоколлизии
 
     // ==== Spawns ====
     [Header("Spawn")]
     [SerializeField] private Vector2 _spawnP1 = new Vector2(-2f, 0f);
     [SerializeField] private Vector2 _spawnP2 = new Vector2(+2f, 0f);
 
-    // ==== Gaps ====
-    [Header("Gaps (разрывы)")]
+    // ==== Gaps (разрывы) ====
+    [Header("Gaps")]
     [SerializeField] private Vector2 _gapIntervalRange = new Vector2(2f, 3f);
     [SerializeField] private Vector2 _gapDurationRange = new Vector2(0.15f, 0.35f);
+
+    // ==== Bonus effects (без ScriptableObject) ====
+    [Header("Bonus Effects")]
+    [Tooltip("Ускорение (множитель) для SpeedUp")]
+    [SerializeField] private float _speedUpMul = 1.3f;   // +30%
+    [Tooltip("Замедление (множитель) для SpeedDown")]
+    [SerializeField] private float _speedDownMul = 0.7f; // -30%
+    [Tooltip("Длительность временных эффектов (сек)")]
+    [SerializeField] private float _effectDuration = 3f; // для Speed/Invuln/PenOff
+    [Tooltip("Прозрачность линии при неуязвимости (0–1). Например, 0.5 = полупрозрачная.")]
+    [SerializeField, Range(0f, 1f)] private float _invulnAlpha = 0.5f;
 
     // Для Line.CanAppend
     public const float Resolution = 0.1f;
@@ -71,6 +82,16 @@ public class DrawManager : MonoBehaviour
         // Разрывы
         public bool penDown = true, inGap = false;
         public float nextGapAt, gapEndAt;
+        public bool wasDrawSuppressed = false;  // для PenOff
+
+        // Эффекты бонусов
+        public float speedMul = 1f;
+        public float speedMulUntil = 0f;
+
+        public bool invulnerable = false;
+        public float invulnUntil = 0f;
+
+        public float noDrawUntil = 0f;          // PenOff до времени
 
         // Детектор своих сегментов (самопересечение)
         public OwnLineCollisionDetector ownDetector;
@@ -81,14 +102,14 @@ public class DrawManager : MonoBehaviour
     {
         if (_linePrefab == null)
         {
-            Debug.LogError("DrawManager: Line Prefab не задан.");
+            Debug.LogError("DrawManagerV3: Line Prefab не задан.");
             enabled = false;
             return;
         }
         var cam = Camera.main;
         if (cam == null)
         {
-            Debug.LogError("DrawManager: Нет MainCamera (поставь тег MainCamera).");
+            Debug.LogError("DrawManagerV3: Нет MainCamera (поставь тег MainCamera).");
             enabled = false;
             return;
         }
@@ -112,20 +133,21 @@ public class DrawManager : MonoBehaviour
         var h21 = _p2.head.gameObject.AddComponent<SelfCollisionDetector>();
         h21.Init(_p1.headCol, OnHeadsClashDraw);
 
-        // === Инициализация системы бонусов (только если разрешено в SaveGame) ===
-        if (SaveGame.IsBonusSystem && _bonusSystem != null)
+        // Бонусы — только если включены в SaveGame и компонент активен
+        if (SaveGame.IsBonusSystem && _bonusSystem != null && _bonusSystem.isActiveAndEnabled)
         {
             _bonusSystem.InitializeFromCamera(cam);
-            _bonusSystem.RegisterHead(_p1.headCol, () => OnBonusCollected(_p1));
-            _bonusSystem.RegisterHead(_p2.headCol, () => OnBonusCollected(_p2));
+            _bonusSystem.RegisterHead(_p1.headCol, (kind) => OnBonusCollected(_p1, kind));
+            _bonusSystem.RegisterHead(_p2.headCol, (kind) => OnBonusCollected(_p2, kind));
         }
         else
         {
-            // Если флаг выключен — убедимся, что бонусная система неактивна
             if (_bonusSystem != null)
+            {
+                _bonusSystem.ForceDespawn();
                 _bonusSystem.enabled = false;
-
-            Debug.Log("Система бонусов отключена (SaveGame.IsBonusSystem = false).");
+            }
+            Debug.Log("Система бонусов отключена (SaveGame.IsBonusSystem = false или компонент не активен).");
         }
 
         _gameRunning = true;
@@ -138,7 +160,7 @@ public class DrawManager : MonoBehaviour
         TickPlayer(_p1);
         TickPlayer(_p2);
 
-        // Тик бонусной системы — только если разрешено и компонент реально активен
+        // Тик бонусной системы — только когда разрешено и реально включена
         if (SaveGame.IsBonusSystem && _bonusSystem != null && _bonusSystem.isActiveAndEnabled)
         {
             _bonusSystem.Tick();
@@ -169,7 +191,7 @@ public class DrawManager : MonoBehaviour
         // Дочерний объект визуала — масштабируем только его, чтобы не ломать радиус коллайдера
         var vis = new GameObject($"{name}_HeadVisual");
         vis.transform.SetParent(p.head, worldPositionStays: false);
-        vis.transform.localPosition = Vector3.zero;
+        vis.transform.localPosition = new Vector3(0f, 0f, -0.1f); // чуть вперёд по Z
         vis.transform.localRotation = Quaternion.identity;
         vis.transform.localScale = Vector3.one;
 
@@ -224,10 +246,14 @@ public class DrawManager : MonoBehaviour
         var seg = Instantiate(_linePrefab, at, Quaternion.identity);
         seg.SetExcludeHeadPoints(_excludeHeadPoints);
         seg.SetColor(p.color);
+        // при желании настрой порядки рендера линии прямо тут (или в префабе)
+        // seg.SetSorting("Default", 0);
 
         // До «взведения» самоколлизии игнорим касания головы с текущим сегментом
         Physics2D.IgnoreCollision(p.headCol, seg.Collider, true);
 
+        if (p.invulnerable)
+            seg.SetAlpha(_invulnAlpha);
         p.currentSegment = seg;
         p.segments.Add(seg);
         p.collisionArmed = false;
@@ -265,6 +291,20 @@ public class DrawManager : MonoBehaviour
         MoveAndDraw(p);
         ArmCollisionWhenReady(p);
         CheckBounds(p);
+
+        // страховка: голова всегда видна
+        if (p.headRenderer != null && !p.headRenderer.enabled) p.headRenderer.enabled = true;
+
+        // истёкшие эффекты
+        if (p.speedMul != 1f && Time.time >= p.speedMulUntil) p.speedMul = 1f;
+        // Проверка окончания неуязвимости
+        if (p.invulnerable && Time.time >= p.invulnUntil)
+        {
+            p.invulnerable = false;
+            // вернуть непрозрачность
+            foreach (var seg in p.segments)
+                if (seg != null) seg.SetAlpha(1f);
+        }
     }
 
     private void HandleInput(Player p)
@@ -305,16 +345,42 @@ public class DrawManager : MonoBehaviour
     private void MoveAndDraw(Player p)
     {
         float dt = Time.deltaTime;
+
         if (p.turnDir != 0)
             p.headingRad += p.turnDir * _turnRateDegPerSec * Mathf.Deg2Rad * dt;
 
         Vector2 dir = new Vector2(Mathf.Cos(p.headingRad), Mathf.Sin(p.headingRad));
-        Vector2 newPos = (Vector2)p.head.position + dir * _speed * dt;
+        Vector2 newPos = (Vector2)p.head.position + dir * (_speed * p.speedMul) * dt;
 
         p.head.position = newPos;
 
-        if (p.penDown && p.currentSegment != null)
+        bool suppressed = Time.time < p.noDrawUntil;      // эффект PenOff активен?
+        bool wasSuppressed = p.wasDrawSuppressed;
+        bool exitSuppressionNow = (!suppressed && wasSuppressed);
+
+        // === 1) Если только что ВЫШЛИ из подавления — начнём новый сегмент до любого SetPosition ===
+        if (exitSuppressionNow)
+        {
+            StartNewSegment(p, newPos);
+            var other = (p == _p1) ? _p2 : _p1;
+            AddOpponentDetectorForSegment(other, p, p.currentSegment);
+
+            // Хотим посеять первую точку в новый сегмент и на этом кадре больше не рисовать
+            if (p.penDown && p.currentSegment != null)
+                p.currentSegment.SetPosition(newPos);
+
+            p.wasDrawSuppressed = false;
+            return; // важно: не добавлять точку в старый сегмент
+        }
+
+        // === 2) Обычное рисование, если сейчас не подавлено ===
+        if (p.penDown && !suppressed && p.currentSegment != null)
+        {
             p.currentSegment.SetPosition(newPos);
+        }
+
+        // === 3) Запомнить текущее состояние подавления для следующего кадра ===
+        p.wasDrawSuppressed = suppressed;
     }
 
     private void ArmCollisionWhenReady(Player p)
@@ -340,10 +406,36 @@ public class DrawManager : MonoBehaviour
     }
 
     // ==== Bonus callback ====
-    private void OnBonusCollected(Player collector)
+    private void OnBonusCollected(Player p, BonusKind kind)
     {
-        Debug.Log($"Бонус подобран: {collector.name}");
-        // Здесь можно добавить эффект бонуса: буст скорости и т.п.
+        switch (kind)
+        {
+            case BonusKind.SpeedUp:
+                p.speedMul = _speedUpMul;
+                p.speedMulUntil = Time.time + _effectDuration;
+                break;
+
+            case BonusKind.SpeedDown:
+                p.speedMul = _speedDownMul;
+                p.speedMulUntil = Time.time + _effectDuration;
+                break;
+
+            case BonusKind.Invulnerability:
+                p.invulnerable = true;
+                p.invulnUntil = Time.time + _effectDuration;
+
+                // сделать все текущие сегменты полупрозрачными
+                foreach (var seg in p.segments)
+                    if (seg != null) seg.SetAlpha(_invulnAlpha);
+                break;
+
+            case BonusKind.PenOff:
+                p.noDrawUntil = Mathf.Max(p.noDrawUntil, Time.time + _effectDuration);
+                p.wasDrawSuppressed = true; // подстраховка: считаем, что уже в подавлении
+                break;
+        }
+
+        Debug.Log($"Бонус {kind} для {p.name}");
     }
 
     // ==== Effects ====
@@ -397,14 +489,14 @@ public class DrawManager : MonoBehaviour
     // ==== Events / Game over ====
     private void OnPlayerHitSelf(Player p)
     {
-        if (!_gameRunning) return;
+        if (!_gameRunning || p.invulnerable) return;
         Debug.Log($"{p.name} соприкоснулся сам с собой! {p.name} проиграл.");
         StopGame(p);
     }
 
     private void OnPlayerHitOther(Player hitter, Player victimOwner)
     {
-        if (!_gameRunning) return;
+        if (!_gameRunning || hitter.invulnerable) return;
         Debug.Log($"{hitter.name} врезался в линию {victimOwner.name}! {hitter.name} проиграл.");
         StopGame(hitter);
     }
@@ -432,8 +524,8 @@ public class DrawManager : MonoBehaviour
             SpawnDeathParticles(loser);
         }
 
-        // Спрячем активный бонус (если есть)
-        // _bonusSystem?.ForceDespawn();
+        // Спрячем активные бонусы (если есть/включены)
+        // if (_bonusSystem != null) _bonusSystem.ForceDespawn();
 
         Debug.Log("Игра остановлена.");
     }
