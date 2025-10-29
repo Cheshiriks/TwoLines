@@ -7,102 +7,163 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody2D))]
 public class Line : MonoBehaviour
 {
+    [Header("References")]
     [SerializeField] private LineRenderer _renderer;
     [SerializeField] private EdgeCollider2D _collider;
-    [SerializeField] private float scaleCollider = 0.1f;
-    [SerializeField] private int _excludeHeadPoints = 3;
 
-    private readonly List<Vector2> _points = new List<Vector2>();
-    
-    private Coroutine _fadeRoutine;
-    private Color32 _baseColor;
+    [Header("Settings")]
+    [SerializeField] private float _edgeRadius = 0.1f;
+
+    private readonly List<Vector2> _pointsWorld = new(); // точки в мировых координатах
+    private int _excludeHeadPoints = 0;
 
     public EdgeCollider2D Collider => _collider;
-    public int PointCount => _renderer.positionCount;
-    public Vector2 GetPoint(int i) => _renderer.GetPosition(i);
-    public Vector2 GetLastPoint() => _renderer.positionCount > 0 ? _renderer.GetPosition(_renderer.positionCount - 1) : Vector2.zero;
+    public int PointCount => _pointsWorld.Count;
 
-    void Awake()
+    private void Awake()
     {
-        if (!TryGetComponent<Rigidbody2D>(out var rb))
-            rb = gameObject.AddComponent<Rigidbody2D>();
-        rb.isKinematic = true;
-        rb.gravityScale = 0f;
-    }
+        if (_renderer == null)
+            _renderer = GetComponent<LineRenderer>();
+        if (_collider == null)
+            _collider = GetComponent<EdgeCollider2D>();
 
-    void Start()
-    {
-        _collider.transform.position -= transform.position;
-    }
+        if (_renderer != null)
+            _renderer.positionCount = 0;
 
-    public void SetPosition(Vector2 pos)
-    {
-        if (!CanAppend(pos)) return;
-
-        _points.Add(pos);
-
-        _renderer.positionCount++;
-        _renderer.SetPosition(_renderer.positionCount - 1, pos);
-
-        UpdateEdgeColliderPoints();
-    }
-
-    private void UpdateEdgeColliderPoints()
-    {
-        if (_points.Count < 2) return;
-
-        int cut = Mathf.Clamp(_excludeHeadPoints, 0, Mathf.Max(0, _points.Count - 2));
-        int usableCount = _points.Count - cut;
-
-        if (usableCount >= 2)
+        if (_collider != null)
         {
-            var arr = new Vector2[usableCount];
-            for (int i = 0; i < usableCount; i++)
-                arr[i] = _points[i];
-
-            _collider.points = arr;
-            _collider.edgeRadius = scaleCollider;
+            _collider.enabled = false;
+            _collider.edgeRadius = _edgeRadius;
+            _collider.isTrigger = true;
         }
     }
 
-    private bool CanAppend(Vector2 pos)
+    /// <summary>Сеем первую точку линии в месте старта (во избежание артефакта в (0,0))</summary>
+    public void Seed(Vector2 posWorld)
     {
-        if (_renderer.positionCount == 0) return true;
-        return Vector2.Distance(_renderer.GetPosition(_renderer.positionCount - 1), pos) > DrawManager.Resolution;
+        AppendPoint(posWorld, updateCollider: false);
+        UpdateRenderer();
     }
 
-    public void SetExcludeHeadPoints(int count)
+    public void SetExcludeHeadPoints(int exclude)
     {
-        _excludeHeadPoints = Mathf.Max(0, count);
-        UpdateEdgeColliderPoints();
+        _excludeHeadPoints = Mathf.Max(0, exclude);
+        UpdateCollider();
     }
 
     public void SetColor(Color32 color)
     {
-        _baseColor = color;
+        if (_renderer == null) return;
         _renderer.material.color = color;
     }
-    
-    // === Затухание (остается слегка видимой) ===
-    public void FadeOut(float duration = 0.5f, byte targetAlpha = 20)
+
+    public void SetAlpha(float a01)
     {
-        if (_fadeRoutine != null) StopCoroutine(_fadeRoutine);
-        _fadeRoutine = StartCoroutine(FadeRoutine(duration, targetAlpha));
+        if (_renderer == null) return;
+        var s = _renderer.startColor;
+        var e = _renderer.endColor;
+        s.a = a01;
+        e.a = a01;
+        _renderer.startColor = s;
+        _renderer.endColor = e;
     }
 
-    private IEnumerator FadeRoutine(float duration, byte targetAlpha)
+    /// <summary>Добавляет новую точку линии (при движении)</summary>
+    public void SetPosition(Vector2 posWorld)
+    {
+        if (!CanAppend(posWorld))
+            return;
+
+        AppendPoint(posWorld, updateCollider: true);
+        UpdateRenderer();
+        UpdateCollider();
+    }
+
+    private void AppendPoint(Vector2 posWorld, bool updateCollider)
+    {
+        _pointsWorld.Add(posWorld);
+
+        if (_renderer != null)
+        {
+            _renderer.positionCount = _pointsWorld.Count;
+            _renderer.SetPosition(_renderer.positionCount - 1, posWorld);
+        }
+
+        if (updateCollider)
+            UpdateCollider();
+    }
+
+    private void UpdateRenderer()
+    {
+        if (_renderer == null)
+            return;
+
+        _renderer.positionCount = _pointsWorld.Count;
+        for (int i = 0; i < _pointsWorld.Count; i++)
+            _renderer.SetPosition(i, _pointsWorld[i]);
+    }
+
+    private void UpdateCollider()
+    {
+        if (_collider == null)
+            return;
+
+        int usableCount = Mathf.Max(0, _pointsWorld.Count - _excludeHeadPoints);
+
+        if (usableCount >= 2)
+        {
+            var local = new Vector2[usableCount];
+            for (int i = 0; i < usableCount; i++)
+                local[i] = transform.InverseTransformPoint(_pointsWorld[i]);
+
+            _collider.points = local;
+            _collider.edgeRadius = _edgeRadius;
+            _collider.enabled = true;
+        }
+        else
+        {
+            _collider.enabled = false;
+        }
+    }
+
+    private bool CanAppend(Vector2 posWorld)
+    {
+        if (_renderer == null) return true;
+        if (_renderer.positionCount == 0) return true;
+
+        Vector3 last = _renderer.GetPosition(_renderer.positionCount - 1);
+        return Vector2.Distance(last, posWorld) > DrawManager.Resolution;
+    }
+
+    /// <summary>Плавное затухание линии</summary>
+    public void FadeOut(float duration = 0.5f, byte targetAlpha = 20)
+    {
+        if (!gameObject.activeInHierarchy || _renderer == null)
+            return;
+        StartCoroutine(FadeRoutine(duration, targetAlpha));
+    }
+
+    private System.Collections.IEnumerator FadeRoutine(float duration, byte targetAlpha)
     {
         float t = 0f;
-        byte startA = _baseColor.a;
+        var startColor = _renderer.startColor;
+        var endColor = _renderer.endColor;
+
+        float startA = startColor.a;
+        float targetA = targetAlpha / 255f;
+
         while (t < duration)
         {
             t += Time.deltaTime;
             float k = Mathf.Clamp01(t / duration);
-            byte newA = (byte)Mathf.Lerp(startA, targetAlpha, k);
-            var newColor = new Color32(_baseColor.r, _baseColor.g, _baseColor.b, newA);
-            _renderer.material.color = newColor;
+            float a = Mathf.Lerp(startA, targetA, k);
+
+            var sc = startColor; var ec = endColor;
+            sc.a = ec.a = a;
+            _renderer.startColor = sc;
+            _renderer.endColor = ec;
+
             yield return null;
         }
-        
     }
 }
