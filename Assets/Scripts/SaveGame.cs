@@ -20,4 +20,9 @@ public class SaveGame : MonoBehaviour
             Destroy(gameObject);
         }
     }
+
+    public void ChangeBonusSystem(bool isBonus)
+    {
+        IsBonusSystem = isBonus;
+    }
 }
