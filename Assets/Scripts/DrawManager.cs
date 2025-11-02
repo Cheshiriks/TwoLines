@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 
 public class DrawManager : MonoBehaviour
 {
@@ -45,6 +46,10 @@ public class DrawManager : MonoBehaviour
     [Tooltip("Прозрачность линии при неуязвимости (0–1). Например, 0.5 = полупрозрачная.")]
     [SerializeField, Range(0f, 1f)] private float _invulnAlpha = 0.5f;
 
+    [SerializeField] private GameObject menuCanvas;
+    [SerializeField] private TextMeshProUGUI scoreFirstPlayerText;
+    [SerializeField] private TextMeshProUGUI scoreSecondPlayerText;
+    
     // Для Line.CanAppend
     public const float Resolution = 0.1f;
 
@@ -58,6 +63,7 @@ public class DrawManager : MonoBehaviour
     // ==== Player model ====
     private class Player
     {
+        public int id;
         public string name;
 
         // Физика головы
@@ -120,8 +126,8 @@ public class DrawManager : MonoBehaviour
         _minX = bl.x; _maxX = tr.x; _minY = bl.y; _maxY = tr.y;
 
         // Игроки
-        _p1 = CreatePlayer("P1", _spawnP1, new Color32(31, 255, 0, 255), KeyCode.A, KeyCode.D);
-        _p2 = CreatePlayer("P2", _spawnP2, new Color32(255, 0, 174, 255), KeyCode.LeftArrow, KeyCode.RightArrow);
+        _p1 = CreatePlayer(1, "P1", _spawnP1, new Color32(31, 255, 0, 255), KeyCode.A, KeyCode.D);
+        _p2 = CreatePlayer(2, "P2", _spawnP2, new Color32(255, 0, 174, 255), KeyCode.LeftArrow, KeyCode.RightArrow);
 
         // Дуэль: голова ↔ все сегменты соперника (на старте по одному)
         AddOpponentDetectorsForAllSegments(_p1, _p2);
@@ -168,10 +174,14 @@ public class DrawManager : MonoBehaviour
     }
 
     // ==== Player / segments ====
-    private Player CreatePlayer(string name, Vector2 spawn, Color32 color, KeyCode left, KeyCode right)
+    private Player CreatePlayer(int id, string name, Vector2 spawn, Color32 color, KeyCode left, KeyCode right)
     {
         var p = new Player();
-        p.name = name; p.keyLeft = left; p.keyRight = right; p.color = color;
+        p.id = id;
+        p.name = name; 
+        p.keyLeft = left; 
+        p.keyRight = right; 
+        p.color = color;
 
         // Родитель: голова с физикой и триггером (scale = 1,1,1)
         var headObj = new GameObject($"{name}_Head");
@@ -526,7 +536,22 @@ public class DrawManager : MonoBehaviour
 
         // Спрячем активные бонусы (если есть/включены)
         // if (_bonusSystem != null) _bonusSystem.ForceDespawn();
-
+        ActiveMenu(loser?.id);
         Debug.Log("Игра остановлена.");
+    }
+
+    private void ActiveMenu(int? id)
+    {
+        
+        SaveGame.Instance.AddScore(id);
+        scoreFirstPlayerText.text = SaveGame.Instance.scoreFirst.ToString();
+        scoreSecondPlayerText.text = SaveGame.Instance.scoreSecond.ToString();
+        
+        Invoke(nameof(SetActiveMenu), 0.6f);
+    }
+
+    private void SetActiveMenu()
+    {
+        menuCanvas.SetActive(true);
     }
 }

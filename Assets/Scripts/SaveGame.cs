@@ -4,6 +4,9 @@ public class SaveGame : MonoBehaviour
 {
     public static bool SoundOn = true;
     public static bool IsBonusSystem = true;
+    
+    public int scoreFirst = 0;
+    public int scoreSecond = 0;
 
     public static SaveGame Instance;
     
@@ -24,5 +27,22 @@ public class SaveGame : MonoBehaviour
     public void ChangeBonusSystem(bool isBonus)
     {
         IsBonusSystem = isBonus;
+    }
+
+    public void NewGame()
+    {
+        scoreFirst = 0;
+        scoreSecond = 0;
+    }
+    
+    public void AddScore(int? loserId)
+    {
+        if (loserId != null)
+        {
+            if (loserId == 2)
+                scoreFirst++;
+            else
+                scoreSecond++;
+        }
     }
 }
