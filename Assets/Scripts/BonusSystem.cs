@@ -28,6 +28,9 @@ public class BonusSystem : MonoBehaviour
     [Header("Collider Fallback")]
     [Tooltip("Если у префаба нет своего Collider2D, добавим CircleCollider2D такого радиуса.")]
     [SerializeField] private float _fallbackColliderRadius = 0.5f;
+    
+    [Header("Pickup VFX")]
+    [SerializeField] private ParticleSystem _pickupVfx;
 
     [Header("Kinds & Colors (Color32, без ScriptableObject)")]
     [Tooltip("Пул типов и их цветов. Система выбирает случайный тип из этого списка.")]
@@ -65,6 +68,7 @@ public class BonusSystem : MonoBehaviour
         public GameObject go;
         public Collider2D col;
         public BonusKind kind;
+        public Color32 color;
         public readonly List<SelfCollisionDetector> detectors = new();
     }
 
@@ -176,7 +180,7 @@ public class BonusSystem : MonoBehaviour
         }
         else col.isTrigger = true;
 
-        var bonus = new BonusEntry { go = go, col = col, kind = kc.kind };
+        var bonus = new BonusEntry { go = go, col = col, kind = kc.kind, color = kc.color  };
 
         // детекторы подбора на головы
         foreach (var h in _heads)
@@ -193,6 +197,31 @@ public class BonusSystem : MonoBehaviour
     {
         try { who.onCollected?.Invoke(bonus.kind); }
         catch (Exception e) { Debug.LogException(e); }
+
+        // ---- VFX: кольца в цвет бонуса ----
+        if (_pickupVfx != null && bonus?.go != null)
+        {
+            var ps = Instantiate(_pickupVfx, bonus.go.transform.position, Quaternion.identity);
+
+            // красим стартовый цвет
+            var main = ps.main;
+            var c = (Color)bonus.color; // Color32 -> Color
+            main.startColor = new ParticleSystem.MinMaxGradient(c);
+
+            ps.Play();
+
+            // авто-удаление после проигрыша
+            float life = 0f;
+            var lt = main.startLifetime;
+            switch (lt.mode)
+            {
+                case ParticleSystemCurveMode.Constant:      life = lt.constant; break;
+                case ParticleSystemCurveMode.TwoConstants:  life = lt.constantMax; break;
+                default:                                    life = 1.0f; break;
+            }
+            Destroy(ps.gameObject, main.duration + life + 0.5f);
+        }
+        // -----------------------------------
 
         CleanupBonusEntry(bonus);
         _bonuses.Remove(bonus);

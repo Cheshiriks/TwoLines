@@ -163,6 +163,7 @@ public class DrawManager : MonoBehaviour
     {
         if (!_gameRunning) return;
 
+        CheckBounds(null);
         TickPlayer(_p1);
         TickPlayer(_p2);
 
@@ -300,7 +301,7 @@ public class DrawManager : MonoBehaviour
         HandleGaps(p);
         MoveAndDraw(p);
         ArmCollisionWhenReady(p);
-        CheckBounds(p);
+        //CheckBounds(p);
 
         // страховка: голова всегда видна
         if (p.headRenderer != null && !p.headRenderer.enabled) p.headRenderer.enabled = true;
@@ -406,13 +407,39 @@ public class DrawManager : MonoBehaviour
 
     private void CheckBounds(Player p)
     {
-        Vector2 pos = p.head.position;
+        Vector2 pos1 = _p1.head.position;
+        float r1 = _p1.headCol.radius;
+        
+        Vector2 pos2 = _p2.head.position;
+        float r2 = _p2.headCol.radius;
+
+        bool isP1 = pos1.x - r1 <= _minX || pos1.x + r1 >= _maxX || pos1.y - r1 <= _minY || pos1.y + r1 >= _maxY;
+        bool isP2 = pos2.x - r2 <= _minX || pos2.x + r2 >= _maxX || pos2.y - r2 <= _minY || pos2.y + r2 >= _maxY;
+
+        if (isP1 && isP2)
+        {
+            Debug.Log($"Оба игрока достигли края экрана! Ничья.");
+            SpawnDeathParticles(_p1);
+            SpawnDeathParticles(_p2);
+            StopGame(null);
+        } else if (isP1)
+        {
+            Debug.Log($"{_p1.name} достиг края экрана! {_p1.name} проиграл.");
+            StopGame(_p1);
+        }
+        else if (isP2)
+        {
+            Debug.Log($"{_p2.name} достиг края экрана! {_p2.name} проиграл.");
+            StopGame(_p2);
+        }
+
+        /*Vector2 pos = p.head.position;
         float r = p.headCol.radius;
         if (pos.x - r <= _minX || pos.x + r >= _maxX || pos.y - r <= _minY || pos.y + r >= _maxY)
         {
             Debug.Log($"{p.name} достиг края экрана! {p.name} проиграл.");
             StopGame(p);
-        }
+        }*/
     }
 
     // ==== Bonus callback ====
