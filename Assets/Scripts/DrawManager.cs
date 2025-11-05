@@ -45,8 +45,12 @@ public class DrawManager : MonoBehaviour
     [SerializeField] private float _effectDuration = 3f; // для Speed/Invuln/PenOff
     [Tooltip("Прозрачность линии при неуязвимости (0–1). Например, 0.5 = полупрозрачная.")]
     [SerializeField, Range(0f, 1f)] private float _invulnAlpha = 0.5f;
-
+    
+    [Header("UI")]
     [SerializeField] private GameObject menuCanvas;
+    [SerializeField] private GameObject bgCanvas;
+    [SerializeField] private TextMeshProUGUI counterText;
+    [SerializeField] private TextMeshProUGUI timeText;
     [SerializeField] private TextMeshProUGUI scoreFirstPlayerText;
     [SerializeField] private TextMeshProUGUI scoreSecondPlayerText;
     
@@ -59,6 +63,9 @@ public class DrawManager : MonoBehaviour
     // ==== Game state ====
     private bool _gameRunning = false;
     private Player _p1, _p2;
+    
+    private float _matchStartTime;
+    private bool _matchTimerRunning = false;
 
     // ==== Player model ====
     private class Player
@@ -156,7 +163,34 @@ public class DrawManager : MonoBehaviour
             Debug.Log("Система бонусов отключена (SaveGame.IsBonusSystem = false или компонент не активен).");
         }
 
+        //_gameRunning = true;
+        menuCanvas.SetActive(true);
+        counterText.gameObject.SetActive(true);
+        StartCoroutine(CountdownStart());
+        
+    }
+    
+    private IEnumerator CountdownStart()
+    {
+        _gameRunning = false;
+        
+        counterText.text = "3";
+        yield return new WaitForSeconds(1f);
+
+        counterText.text = "2";
+        yield return new WaitForSeconds(1f);
+
+        counterText.text = "1";
+        yield return new WaitForSeconds(1f);
+
+        Debug.Log("Start!");
+        menuCanvas.SetActive(false);
+        counterText.gameObject.SetActive(false);
+
         _gameRunning = true;
+        
+        _matchStartTime = Time.time;
+        _matchTimerRunning = true;
     }
 
     void Update()
@@ -563,16 +597,25 @@ public class DrawManager : MonoBehaviour
 
         // Спрячем активные бонусы (если есть/включены)
         // if (_bonusSystem != null) _bonusSystem.ForceDespawn();
-        ActiveMenu(loser?.id);
+        
+        _matchTimerRunning = false;
+        float matchTime = Time.time - _matchStartTime;
+
+        SaveGame.Instance.SetNewGameTime(matchTime);
+        ActiveMenu(loser?.id, matchTime);
         Debug.Log("Игра остановлена.");
     }
 
-    private void ActiveMenu(int? id)
+    private void ActiveMenu(int? id, float matchTime)
     {
         
         SaveGame.Instance.AddScore(id);
         scoreFirstPlayerText.text = SaveGame.Instance.scoreFirst.ToString();
         scoreSecondPlayerText.text = SaveGame.Instance.scoreSecond.ToString();
+
+        int minutes = (int)(matchTime / 60f);
+        int seconds = (int)(matchTime % 60f);
+        timeText.text = $"{minutes:00}:{seconds:00}";
         
         Invoke(nameof(SetActiveMenu), 0.6f);
     }
@@ -580,5 +623,7 @@ public class DrawManager : MonoBehaviour
     private void SetActiveMenu()
     {
         menuCanvas.SetActive(true);
+        counterText.gameObject.SetActive(false);
+        bgCanvas.SetActive(true);
     }
 }

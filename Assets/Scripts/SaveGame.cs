@@ -5,8 +5,12 @@ public class SaveGame : MonoBehaviour
     public static bool SoundOn = true;
     public static bool IsBonusSystem = true;
     
+    public bool isClassicEducation = false;
+    public bool isArcadeEducation = false;
+    
     public int scoreFirst = 0;
     public int scoreSecond = 0;
+    public float maxGameTime = 0f;
 
     public static SaveGame Instance;
     
@@ -17,6 +21,7 @@ public class SaveGame : MonoBehaviour
             transform.parent = null;
             DontDestroyOnLoad(gameObject);
             Instance = this;
+            LoadDate();
         }
         else
         {
@@ -45,4 +50,42 @@ public class SaveGame : MonoBehaviour
                 scoreSecond++;
         }
     }
+
+    public void SetClassicEducation()
+    {
+        isClassicEducation = true;
+        PlayerPrefs.SetString("isClassicEducation", "true");
+    }
+    
+    public void SetArcadeEducation()
+    {
+        isArcadeEducation = true;
+        PlayerPrefs.SetString("isArcadeEducation", "true");
+    }
+
+    public void SetNewGameTime(float matchTime)
+    {
+        if (matchTime > maxGameTime)
+        {
+            maxGameTime = matchTime;
+            PlayerPrefs.SetFloat("maxGameTime", maxGameTime);
+        }
+    }
+    
+    public void LoadDate()
+    {
+        if (PlayerPrefs.HasKey("maxGameTime"))
+        {
+            maxGameTime = PlayerPrefs.GetFloat("maxGameTime");
+        }
+        if (PlayerPrefs.HasKey("isClassicEducation"))
+        {
+            isClassicEducation = PlayerPrefs.GetString("isClassicEducation") == "true";
+        }
+        if (PlayerPrefs.HasKey("isArcadeEducation"))
+        {
+            isArcadeEducation = PlayerPrefs.GetString("isArcadeEducation") == "true";
+        }
+    }
+    
 }
