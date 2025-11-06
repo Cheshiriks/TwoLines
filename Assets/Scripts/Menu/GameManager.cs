@@ -50,4 +50,9 @@ public class GameManager : MonoBehaviour
     {
         SceneManager.LoadScene(1);
     }
+
+    public void PlayButtonSound()
+    {
+        FindObjectOfType<ButtonSound>().Play();
+    }
 }

@@ -54,6 +54,12 @@ public class DrawManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI scoreFirstPlayerText;
     [SerializeField] private TextMeshProUGUI scoreSecondPlayerText;
     
+    [Header("Sounds")]
+    [SerializeField] private Sounds lightSword; 
+    [SerializeField] private Sounds bonusSound;
+    [SerializeField] private Sounds counterSound;
+    [SerializeField] private Sounds startSound;
+    
     // Для Line.CanAppend
     public const float Resolution = 0.1f;
 
@@ -175,15 +181,20 @@ public class DrawManager : MonoBehaviour
         _gameRunning = false;
         
         counterText.text = "3";
+        counterSound.Play();
         yield return new WaitForSeconds(1f);
 
         counterText.text = "2";
+        counterSound.Play();
         yield return new WaitForSeconds(1f);
 
         counterText.text = "1";
+        counterSound.Play();
         yield return new WaitForSeconds(1f);
 
         Debug.Log("Start!");
+        startSound.Play();
+        
         menuCanvas.SetActive(false);
         counterText.gameObject.SetActive(false);
 
@@ -197,9 +208,9 @@ public class DrawManager : MonoBehaviour
     {
         if (!_gameRunning) return;
 
-        CheckBounds(null);
         TickPlayer(_p1);
         TickPlayer(_p2);
+        CheckBounds(null);
 
         // Тик бонусной системы — только когда разрешено и реально включена
         if (SaveGame.IsBonusSystem && _bonusSystem != null && _bonusSystem.isActiveAndEnabled)
@@ -505,6 +516,7 @@ public class DrawManager : MonoBehaviour
                 p.wasDrawSuppressed = true; // подстраховка: считаем, что уже в подавлении
                 break;
         }
+        bonusSound.Play();
 
         Debug.Log($"Бонус {kind} для {p.name}");
     }
@@ -602,6 +614,7 @@ public class DrawManager : MonoBehaviour
         float matchTime = Time.time - _matchStartTime;
 
         SaveGame.Instance.SetNewGameTime(matchTime);
+        lightSword.Play();
         ActiveMenu(loser?.id, matchTime);
         Debug.Log("Игра остановлена.");
     }

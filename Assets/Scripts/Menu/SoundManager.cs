@@ -20,13 +20,13 @@ public class SoundManager : MonoBehaviour
         {
             _image.sprite = soundOff;
             SaveGame.SoundOn = false;
-            //FindObjectOfType<GameSound>().Pause();
+            FindObjectOfType<GameSound>().Pause();
         }
         else
         {
             _image.sprite = soundOn;
             SaveGame.SoundOn = true;
-            //FindObjectOfType<GameSound>().Play();
+            FindObjectOfType<GameSound>().Play();
         }
     }
 }
