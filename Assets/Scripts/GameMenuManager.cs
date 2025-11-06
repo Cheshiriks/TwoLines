@@ -14,4 +14,9 @@ public class GameMenuManager : MonoBehaviour
         SaveGame.Instance.NewGame();
         SceneManager.LoadScene(0);
     }
+    
+    public void PlayButtonSound()
+    {
+        FindObjectOfType<ButtonSound>().Play();
+    }
 }
