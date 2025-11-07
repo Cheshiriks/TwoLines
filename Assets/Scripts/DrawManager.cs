@@ -59,6 +59,10 @@ public class DrawManager : MonoBehaviour
     [SerializeField] private Sounds bonusSound;
     [SerializeField] private Sounds counterSound;
     [SerializeField] private Sounds startSound;
+
+    [Header("Yandex")]
+    [SerializeField] private Yandex yandex;
+    [SerializeField] private YandexAdApi yandexAd;
     
     // Для Line.CanAppend
     public const float Resolution = 0.1f;
@@ -615,6 +619,7 @@ public class DrawManager : MonoBehaviour
 
         SaveGame.Instance.SetNewGameTime(matchTime);
         lightSword.Play();
+        yandex.YandexStopGameplay();
         ActiveMenu(loser?.id, matchTime);
         Debug.Log("Игра остановлена.");
     }
@@ -638,5 +643,12 @@ public class DrawManager : MonoBehaviour
         menuCanvas.SetActive(true);
         counterText.gameObject.SetActive(false);
         bgCanvas.SetActive(true);
+
+        Invoke(nameof(ShowAd), 0.4f);
+    }
+
+    private void ShowAd()
+    {
+        yandexAd.ShowAdYandex();
     }
 }

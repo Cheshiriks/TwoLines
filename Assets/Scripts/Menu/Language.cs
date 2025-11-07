@@ -7,15 +7,8 @@ public class Language : MonoBehaviour
     [DllImport("__Internal")]
     private static extern string GetLang();
     
-    [DllImport("__Internal")]
-    private static extern string GetDomen();
-
-    [DllImport("__Internal")]
-    private static extern void GetStart();
-    
     public static Language Instance;
     public string currentLanguage = "ru";
-    public string currentDomen = "ru";
 
     private void Awake()
     {
@@ -34,26 +27,11 @@ public class Language : MonoBehaviour
     {
         try
         {
-            GetStartApi();
             currentLanguage = GetLang();
-            currentDomen = GetDomen();
         }
         catch (Exception e)
         {
             currentLanguage = "ru";
-            currentDomen = "ru";
-        }
-    }
-
-    private void GetStartApi()
-    {
-        try
-        {
-            GetStart();
-        }
-        catch (Exception e)
-        {
-            Debug.Log($"Метод ysdk.features.LoadingAPI.ready() недоступен");
         }
     }
 }

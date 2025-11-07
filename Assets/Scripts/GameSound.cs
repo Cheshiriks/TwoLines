@@ -5,9 +5,6 @@ using UnityEngine;
 public class GameSound : MonoBehaviour
 {
     private AudioSource _audioComponent;
-    
-    [DllImport("__Internal")]
-    private static extern string GameplayStart();
 
     private void Start()
     {
@@ -31,24 +28,13 @@ public class GameSound : MonoBehaviour
         }
     }
     
-    public void PlayAndYandex()
+    /*public void PlayAndYandex()
     {
         if (SaveGame.SoundOn)
         {
             _audioComponent.Play();
             YandexStartGameplay();
         }
-    }
+    }*/
     
-    private void YandexStartGameplay()
-    {
-        try
-        {
-            GameplayStart();
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-        }
-    }
 }
