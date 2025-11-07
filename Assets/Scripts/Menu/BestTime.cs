@@ -1,6 +1,5 @@
 using System.Collections;
 using TMPro;
-using UnityEditor.Searcher;
 using UnityEngine;
 
 public class BestTime : MonoBehaviour
