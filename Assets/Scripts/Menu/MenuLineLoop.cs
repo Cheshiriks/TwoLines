@@ -48,6 +48,8 @@ public class MenuLineLoop : MonoBehaviour
         new Color32(255, 0, 174, 255),
         Color.red,
         Color.blue,
+        Color.yellow,
+        new Color32(132, 0, 255, 255)
     };
 
     private void Start()

@@ -11,6 +11,8 @@ public class SaveGame : MonoBehaviour
     public int scoreFirst = 0;
     public int scoreSecond = 0;
     public float maxGameTime = 0f;
+    
+    public int colorsId = 1;
 
     public static SaveGame Instance;
     

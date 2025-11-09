@@ -76,6 +76,8 @@ public class DrawManager : MonoBehaviour
     
     private float _matchStartTime;
     private bool _matchTimerRunning = false;
+    
+    private PlayersColor _playersColor = new PlayersColor();
 
     // ==== Player model ====
     private class Player
@@ -142,9 +144,10 @@ public class DrawManager : MonoBehaviour
         var tr = cam.ViewportToWorldPoint(new Vector3(1, 1, 0));
         _minX = bl.x; _maxX = tr.x; _minY = bl.y; _maxY = tr.y;
 
+        var colors = _playersColor.GetColors(SaveGame.Instance.colorsId);
         // Игроки
-        _p1 = CreatePlayer(1, "P1", _spawnP1, new Color32(31, 255, 0, 255), KeyCode.A, KeyCode.D);
-        _p2 = CreatePlayer(2, "P2", _spawnP2, new Color32(255, 0, 174, 255), KeyCode.LeftArrow, KeyCode.RightArrow);
+        _p1 = CreatePlayer(1, "P1", _spawnP1, colors[0], KeyCode.A, KeyCode.D);
+        _p2 = CreatePlayer(2, "P2", _spawnP2, colors[1], KeyCode.LeftArrow, KeyCode.RightArrow);
 
         // Дуэль: голова ↔ все сегменты соперника (на старте по одному)
         AddOpponentDetectorsForAllSegments(_p1, _p2);
@@ -628,6 +631,10 @@ public class DrawManager : MonoBehaviour
     {
         
         SaveGame.Instance.AddScore(id);
+        var colors = _playersColor.GetColors(SaveGame.Instance.colorsId);
+        scoreFirstPlayerText.color = colors[0];
+        scoreSecondPlayerText.color = SaveGame.Instance.colorsId != 3 ? colors[1] : new Color32(92, 0, 198, 255);
+        
         scoreFirstPlayerText.text = SaveGame.Instance.scoreFirst.ToString();
         scoreSecondPlayerText.text = SaveGame.Instance.scoreSecond.ToString();
 
