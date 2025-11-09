@@ -7,6 +7,7 @@ public class GameManager : MonoBehaviour
     [Header("UI")]
     [SerializeField] private GameObject menuCanvas;
     [SerializeField] private GameObject ruleCanvas;
+    [SerializeField] private GameObject colorCanvas;
     [SerializeField] private GameObject classicCanvas;
     [SerializeField] private GameObject arcadeCanvas;
     
@@ -20,6 +21,7 @@ public class GameManager : MonoBehaviour
         else
         {
             menuCanvas.SetActive(false);
+            colorCanvas.SetActive(false);
             ruleCanvas.SetActive(true);
             classicCanvas.SetActive(true);
             arcadeCanvas.SetActive(false);
@@ -38,6 +40,7 @@ public class GameManager : MonoBehaviour
         else
         {
             menuCanvas.SetActive(false);
+            colorCanvas.SetActive(false);
             ruleCanvas.SetActive(true);
             classicCanvas.SetActive(false);
             arcadeCanvas.SetActive(true);
@@ -54,5 +57,19 @@ public class GameManager : MonoBehaviour
     public void PlayButtonSound()
     {
         FindObjectOfType<ButtonSound>().Play();
+    }
+    
+    public void OpenColorCanvas()
+    {
+        menuCanvas.SetActive(false);
+        ruleCanvas.SetActive(false);
+        colorCanvas.SetActive(true);
+    }
+    
+    public void CloseColorCanvas()
+    {
+        menuCanvas.SetActive(true);
+        ruleCanvas.SetActive(false);
+        colorCanvas.SetActive(false);
     }
 }
