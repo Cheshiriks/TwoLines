@@ -25,14 +25,27 @@ mergeInto(LibraryManager.library, {
     ysdk.adv.showFullscreenAdv({
       callbacks: {
         onClose: function(wasShown) {
-          myGameInstance.SendMessage('GameSound', 'Play');
+          myGameInstance.SendMessage('GameMenuManager', 'AdContinue');
         },
         onError: function(error) {
-          myGameInstance.SendMessage('GameSound', 'Play');
+          myGameInstance.SendMessage('GameMenuManager', 'AdContinue');
         }
       }
     })
   },
+  
+  ShowAdvMenu: function () {
+    ysdk.adv.showFullscreenAdv({
+      callbacks: {
+        onClose: function(wasShown) {
+          myGameInstance.SendMessage('GameMenuManager', 'AdMenu');
+        },
+        onError: function(error) {
+          myGameInstance.SendMessage('GameMenuManager', 'AdMenu');
+        }
+      }
+    })
+  },  
   
   ShowVideoAdv: function () {
     ysdk.adv.showRewardedVideo({

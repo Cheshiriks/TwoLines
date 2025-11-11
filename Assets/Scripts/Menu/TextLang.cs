@@ -20,10 +20,6 @@ public class TextLang : MonoBehaviour
         {
             textMash.text = ButtonRus;
         }
-        else if (Language.Instance.currentLanguage == "tr")
-        {
-            textMash.text = ButtonTur;
-        }
         else
         {
             textMash.text = ButtonEng;

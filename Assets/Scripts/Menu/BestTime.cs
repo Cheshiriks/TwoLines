@@ -44,10 +44,6 @@ public class BestTime : MonoBehaviour
             {
                 textMeshPro.text = "Максимальное время матча: " + time;
             }
-            else if (Language.Instance.currentLanguage == "tr")
-            {
-                textMeshPro.text = "Maksimum maç süresi: " + time;
-            }
             else
             {
                 textMeshPro.text = "Max match time: " + time;
