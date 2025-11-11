@@ -1,5 +1,3 @@
-using System;
-using System.Runtime.InteropServices;
 using UnityEngine;
 
 public class GameSound : MonoBehaviour
@@ -27,14 +25,5 @@ public class GameSound : MonoBehaviour
             _audioComponent.Play();
         }
     }
-    
-    /*public void PlayAndYandex()
-    {
-        if (SaveGame.SoundOn)
-        {
-            _audioComponent.Play();
-            YandexStartGameplay();
-        }
-    }*/
     
 }

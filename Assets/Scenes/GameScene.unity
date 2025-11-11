@@ -760,6 +760,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c594843ff0da14607b6ff06ad093c26b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  yandexAd: {fileID: 686607746}
 --- !u!4 &452161443
 Transform:
   m_ObjectHideFlags: 0
@@ -3361,7 +3362,6 @@ MonoBehaviour:
   counterSound: {fileID: 284521027}
   startSound: {fileID: 1957337024}
   yandex: {fileID: 416218572}
-  yandexAd: {fileID: 686607746}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
