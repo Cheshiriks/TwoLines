@@ -21,6 +21,19 @@ mergeInto(LibraryManager.library, {
     return buffer;
   },
   
+    ShowFirstAdv: function () {
+      ysdk.adv.showFullscreenAdv({
+        callbacks: {
+          onClose: function(wasShown) {
+            myGameInstance.SendMessage('GameSound', 'Play');
+          },
+          onError: function(error) {
+            myGameInstance.SendMessage('GameSound', 'Play');
+          }
+        }
+      })
+    },
+  
   ShowAdv: function () {
     ysdk.adv.showFullscreenAdv({
       callbacks: {

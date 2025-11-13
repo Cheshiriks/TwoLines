@@ -14,6 +14,9 @@ public class BestTime : MonoBehaviour
     private bool _isChangeLang = true;
     private float _maxGameTime = 0f;
     
+    private Coroutine _pulseCoroutine;
+    private bool _initialized;
+    
     private void Start()
     {
         // Получаем компонент TextMeshProUGUI (если это UI)
@@ -23,9 +26,26 @@ public class BestTime : MonoBehaviour
         _maxGameTime = SaveGame.Instance.maxGameTime;
 
         // Запускаем пульсацию
-        StartCoroutine(Pulse());
+        _initialized = true;
+        // StartCoroutine(Pulse());
+    }
+    
+    private void OnEnable()
+    {
+        // Каждый раз при активации — запускаем пульсацию заново
+        _pulseCoroutine = StartCoroutine(Pulse());
     }
 
+    private void OnDisable()
+    {
+        // Когда объект выключается — останавливаем корутину, чтобы избежать утечек
+        if (_pulseCoroutine != null)
+            StopCoroutine(_pulseCoroutine);
+
+        // Возвращаем оригинальный размер, чтобы при следующем включении начинать "чисто"
+        transform.localScale = originalScale;
+    }
+    
     private void Update()
     {
         if (_currentLanguage != Language.Instance.currentLanguage)
@@ -54,6 +74,8 @@ public class BestTime : MonoBehaviour
     
     private IEnumerator Pulse()
     {
+        yield return new WaitUntil(() => _initialized && SaveGame.Instance != null);
+        
         // Бесконечная анимация пульсации
         while (true)
         {
