@@ -9,7 +9,7 @@ public class YandexStartApi : MonoBehaviour
     private static extern void GetStart();
     
     [DllImport("__Internal")]
-    private static extern string ShowAdv();
+    private static extern string ShowFirstAdv();
     
     public static YandexStartApi Instance;
     
@@ -45,7 +45,7 @@ public class YandexStartApi : MonoBehaviour
         try
         {
             FindObjectOfType<GameSound>().Pause();
-            ShowAdv();
+            ShowFirstAdv();
         }
         catch
         {
